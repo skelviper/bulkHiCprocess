@@ -1,0 +1,9 @@
+ref_genome: GRCm38
+
+refs:
+  GRCm38:
+    compartment_ref_track: /share/home/zliu/share/Data/public/ref_genome/mouse_ref/M23/CpG/mm10.GC.100k.txt
+    chr_len: /share/Data/public/ref_genome/mouse_ref/M23/raw_data/chr.len
+  GRCh37d5:
+    compartment_ref_track: /share/home/zliu/share/Data/public/ref_genome/human_ref
+    chr_len: /share/Data/public/ref_genome/GRCh37/raw_data/hg19.chr.withchr.len
