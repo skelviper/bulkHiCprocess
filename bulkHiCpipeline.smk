@@ -1,8 +1,8 @@
 import os
 import numpy as np
 
-#SAMPLES = [i.replace(".pairs.gz","") for i in os.listdir("processed/pairs/")]
-SAMPLES = ["laneGM"]
+SAMPLES = [i.replace(".pairs.gz","") for i in os.listdir("processed/pairs/")]
+#SAMPLES = ["laneGM"]
 
 ###############################################
 # call compartment and TAD like Hi-C 3.0
