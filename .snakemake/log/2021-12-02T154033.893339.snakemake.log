@@ -1,0 +1,3 @@
+FileNotFoundError in line 4 of /shareb/zliu/analysis/hires_validation/pileup/bulkHiCProcess/bulkHiCpipeline.smk:
+[Errno 2] No such file or directory: 'processed/pairs/'
+  File "/shareb/zliu/analysis/hires_validation/pileup/bulkHiCProcess/bulkHiCpipeline.smk", line 4, in <module>

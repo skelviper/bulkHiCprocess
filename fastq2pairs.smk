@@ -17,13 +17,7 @@ def listdir_nohidden(path):
 SAMPLES = list(set(listdir_nohidden("./Rawdata")))
 #SAMPLES = [""]
 
-"""
-SOFTWARES AND DATA
-note that other softwares like cutadapt BWA etc. is also needed, recommend install them with conda
-"""
-
-#mm10
-BWA_REF_GENOME="/share/home/zliu/share/Data/public/ref_genome/mouse_ref/M23/bwamem2/genome.fa",
+configfile: "bulkHiCprocess/config.yaml"
 
 #############END_CONFIG#############
 
@@ -40,11 +34,12 @@ rule bwa_map:
     input:
         DNA1="Rawdata/{sample}_1.fastq.gz",
         DNA2="Rawdata/{sample}_2.fastq.gz",
+        BWA_REF_GENOME=config["refs"][config["ref_genome"]]["BWA_REF_GENOME"],
     output:
         bamfile = "processed/mapping/{sample}.aln.bam"
-    threads: 20
+    threads: 30
     resources:
-        nodes = 20
+        nodes = 30
     params:
         extra=r"-R '@RG\tID:{sample}\tPL:ILLUMINA\tSM:{sample}'",
     shell:"""
@@ -53,7 +48,7 @@ rule bwa_map:
         conda activate py3
         set -u
 
-        bwa-mem2 mem -5SP -t{threads} {params.extra} {BWA_REF_GENOME} {input.DNA1} {input.DNA2} | samtools sort -@{threads} -n -o {output.bamfile} -
+        bwa-mem2 mem -5SP -t{threads} {params.extra} {input.BWA_REF_GENOME} {input.DNA1} {input.DNA2} | samtools sort -@{threads} -n -o {output.bamfile} -
 
         set +u
         conda deactivate
@@ -63,12 +58,12 @@ rule bwa_map:
 rule bam2pairs:
     input:
     	bamfile = rules.bwa_map.output.bamfile,
-    	chromsizes = "/share/home/zliu/share/Data/public/ref_genome/mouse_ref/M23/raw_data/chr.len",
+    	chromsizes = config["refs"][config["ref_genome"]]["chr_len"],
     output:
     	dedupPairs = "processed/pairs/{sample}.pairs.gz",
-    threads: 15
+    threads: 30
     resources:
-        nodes = 15
+        nodes = 30
     shell:"""
     	set +u
         source activate
@@ -76,7 +71,7 @@ rule bam2pairs:
         set -u
 
         pairtools parse --chroms-path {input.chromsizes} {input.bamfile} | \
-        pairtools sort --nproc 10 --tmpdir=./ | pairtools dedup | pairtools split --output-pairs {output.dedupPairs}
+        pairtools sort --nproc 30 --tmpdir=./ | pairtools dedup | pairtools split --output-pairs {output.dedupPairs}
 
         set +u
         conda deactivate

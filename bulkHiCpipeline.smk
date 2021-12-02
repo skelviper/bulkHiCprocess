@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-SAMPLES = [i.replace(".pairs.gz","") for i in os.listdir("processed/pairs/")]
+#SAMPLES = [i.replace(".pairs.gz","") for i in os.listdir("processed/pairs/")]
+SAMPLES = ["laneGM"]
 
-##########reference file config################
-#comaprtment_ref_track = "/share/home/zliu/share/Data/public/ref_genome/GRCh37/raw_data/hg19.gccontent.withchr.100k.txt"
 ###############################################
 # call compartment and TAD like Hi-C 3.0
 # draw saddle plot and calc comapartment strength
+# update on 20211202 by zliu to 
 
 configfile: "bulkHiCprocess/config.yaml"
 
@@ -31,7 +31,7 @@ rule pairs2cool:
     shell:"""
         set +u
         source activate
-        conda activate hic
+        conda activate hic2
         set -u
 
         cooler cload pairs -c1 2 -c2 4 -p1 3 -p2 5 {input.chr_len}:{params.resolution} {input.pairs} {output.balancedCool}
@@ -52,7 +52,7 @@ rule generate_mcool:
     
         set +u
         source activate
-        conda activate hic
+        conda activate hic2
         set -u
         
         cooler zoomify -p {threads} {input.balancedCool} -r 5000,10000,20000,40000,100000,200000,500000,1000000 --balance -o {output.mcool} 
@@ -73,10 +73,10 @@ rule call_compartment:
     shell:"""
         set +u
         source activate
-        conda activate hic
+        conda activate hic2
         set -u
 
-        cooltools call-compartments {input.mcool}::/resolutions/{params.resolution} --reference-track {input.comaprtment_ref_track} -o ./processed/compartment/{wildcards.sample}.compartment.100k --bigwig
+        cooltools eigs-cis {input.mcool}::/resolutions/{params.resolution} --reference-track {input.comaprtment_ref_track} -o ./processed/compartment/{wildcards.sample}.compartment.100k --bigwig
 
         set +u
         conda deactivate
@@ -95,10 +95,10 @@ rule compute_expected:
     shell:"""
         set +u
         source activate
-        conda activate hic
+        conda activate hic2
         set -u
 
-        cooltools compute-expected {input.mcool}::/resolutions/{params.resolution}  -p {threads} -o {output.expected100k}
+        cooltools expected-cis {input.mcool}::/resolutions/{params.resolution}  -p {threads} -o {output.expected100k}
 
         set +u
         conda deactivate
@@ -113,10 +113,10 @@ rule call_tad:
     shell:"""
         set +u
         source activate
-        conda activate hic
+        conda activate hic2
         set -u
         
-        cooltools diamond-insulation {input.coolpath} --ignore-diags 2 --window-pixels 40 > {output.insulationScore}
+        cooltools insulation {input.coolpath} --ignore-diags 2 --window-pixels 40 > {output.insulationScore}
         
         set +u
         conda deactivate
@@ -177,9 +177,9 @@ rule compute_saddle:
     shell:"""
         set +u
         source activate
-        conda activate hic
+        conda activate hic2
         set -u
-        cooltools compute-saddle {input.mcool}::/resolutions/{params.resolution} \
+        cooltools saddle {input.mcool}::/resolutions/{params.resolution} \
         ./processed/compartment/{wildcards.sample}.compartment.100k.cis.vecs.tsv::E1 {input.expected} \
         -o ./processed/saddle/{wildcards.sample}.saddle --fig png --strength --qrange 0.025 0.975
         set +u

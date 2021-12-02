@@ -1,9 +1,11 @@
-ref_genome: GRCm38
+ref_genome: GRCh37d5
 
 refs:
   GRCm38:
     compartment_ref_track: /share/home/zliu/share/Data/public/ref_genome/mouse_ref/M23/CpG/mm10.GC.100k.txt
     chr_len: /share/Data/public/ref_genome/mouse_ref/M23/raw_data/chr.len
+    BWA_REF_GENOME: /share/home/zliu/share/Data/public/ref_genome/mouse_ref/M23/bwamem2/genome.fa
   GRCh37d5:
-    compartment_ref_track: /share/home/zliu/share/Data/public/ref_genome/human_ref
+    compartment_ref_track: /share/home/zliu/share/Data/public/ref_genome/GRCh37/raw_data/GC_content/hg19.100000.GC_content.tsv
     chr_len: /share/Data/public/ref_genome/GRCh37/raw_data/hg19.chr.withchr.len
+    BWA_REF_GENOME: /share/home/zliu/share/Data/public/ref_genome/human_ref/GRCh37d5/bwa_mem2_index/genome.fa
