@@ -116,7 +116,7 @@ rule call_tad:
         conda activate hic2
         set -u
         
-        cooltools insulation {input.coolpath} --ignore-diags 2 --window-pixels 40 > {output.insulationScore}
+        cooltools insulation {input.coolpath} --ignore-diags 2 --window-pixels 20 40 60 80 100 200 > {output.insulationScore}
         
         set +u
         conda deactivate
