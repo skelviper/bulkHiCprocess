@@ -13,7 +13,7 @@ configfile: "bulkHiCprocess/config.yaml"
 
 rule all:
     input:
-        expand("processed/TADs/{sample}.tad.bed",sample=SAMPLES),
+       # expand("processed/TADs/{sample}.tad.bed",sample=SAMPLES),
         expand("processed/compartment/{sample}.compartment.100k.cis.vecs.tsv",sample=SAMPLES),
         expand("processed/expected/{sample}.100k.expected.tsv",sample=SAMPLES),
         expand("processed/saddle/{sample}.saddle.saddledump.npz",sample=SAMPLES),
@@ -34,7 +34,7 @@ rule pairs2cool:
         conda activate hic2
         set -u
 
-        cooler cload pairs -c1 2 -c2 4 -p1 3 -p2 5 {input.chr_len}:{params.resolution} {input.pairs} {output.balancedCool}
+        cooler cload pairs -c1 2 -c2 4 -p1 3 -p2 5 {input.chr_len}):{params.resolution} {input.pairs} {output.balancedCool}
         cooler balance {output.balancedCool}
 
         set +u
@@ -55,7 +55,7 @@ rule generate_mcool:
         conda activate hic2
         set -u
         
-        cooler zoomify -p {threads} {input.balancedCool} -r 5000,10000,20000,40000,100000,200000,500000,1000000 --balance -o {output.mcool} 
+        cooler zoomify -p {threads} {input.balancedCool} -r 5000,20000,50000,100000,200000,500000,1000000 --balance -o {output.mcool} 
 
         set +u
         conda deactivate
@@ -75,8 +75,8 @@ rule call_compartment:
         source activate
         conda activate hic2
         set -u
-
-        cooltools eigs-cis {input.mcool}::/resolutions/{params.resolution} --reference-track {input.comaprtment_ref_track} -o ./processed/compartment/{wildcards.sample}.compartment.100k --bigwig
+        mkdir -p processed/compartment
+        cooltools eigs-cis {input.mcool}::/resolutions/{params.resolution} --phasing-track {input.comaprtment_ref_track} -o ./processed/compartment/{wildcards.sample}.compartment.100k --bigwig
 
         set +u
         conda deactivate
