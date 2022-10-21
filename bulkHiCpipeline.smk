@@ -34,7 +34,7 @@ rule pairs2cool:
         conda activate hic2
         set -u
 
-        cooler cload pairs -c1 2 -c2 4 -p1 3 -p2 5 {input.chr_len}):{params.resolution} {input.pairs} {output.balancedCool}
+        cooler cload pairs -c1 2 -c2 4 -p1 3 -p2 5 {input.chr_len}:{params.resolution} {input.pairs} {output.balancedCool}
         cooler balance {output.balancedCool}
 
         set +u
