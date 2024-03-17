@@ -15,51 +15,35 @@ rule all:
     input:
        # expand("processed/TADs/{sample}.tad.bed",sample=SAMPLES),
         expand("processed/compartment/{sample}.compartment.100k.cis.vecs.tsv",sample=SAMPLES),
-        expand("processed/expected/{sample}.100k.expected.tsv",sample=SAMPLES),
-        expand("processed/saddle/{sample}.saddle.saddledump.npz",sample=SAMPLES),
-        "processed/saddle/compartmentStrength.txt",  
+       # expand("processed/expected/{sample}.100k.expected.tsv",sample=SAMPLES),
+       # expand("processed/saddle/{sample}.saddle.saddledump.npz",sample=SAMPLES),
+       # "processed/saddle/compartmentStrength.txt",  
 
 rule pairs2cool:
     input:
         pairs = "processed/pairs/{sample}.pairs.gz",
         chr_len = config["refs"][config["ref_genome"]]["chr_len"],
     output:
-        balancedCool = "processed/cools/{sample}.5k.balanced.cool",
+        Cool = "processed/cools/{sample}.5k.cool",
     params:
         resolution = 5000,
     threads: 8
     shell:"""
-        set +u
-        source activate
-        conda activate hic2
-        set -u
 
-        cooler cload pairs -c1 2 -c2 4 -p1 3 -p2 5 {input.chr_len}:{params.resolution} {input.pairs} {output.balancedCool}
-        cooler balance {output.balancedCool}
+        cooler cload pairs -c1 2 -c2 4 -p1 3 -p2 5 {input.chr_len}:{params.resolution} {input.pairs} {output.Cool}
 
-        set +u
-        conda deactivate
-        set -u
     """
 
 rule generate_mcool:
     input:
-        balancedCool = rules.pairs2cool.output.balancedCool,
+        Cool = rules.pairs2cool.output.Cool,
     output:
-        mcool = "processed/mcools/{sample}.balanced.mcool"
+        mcool = "processed/mcools/{sample}.mcool"
     threads: 10
     shell:"""
-    
-        set +u
-        source activate
-        conda activate hic2
-        set -u
         
-        cooler zoomify -p {threads} {input.balancedCool} -r 5000,20000,50000,100000,200000,500000,1000000 --balance -o {output.mcool} 
+        cooler zoomify -p {threads} {input.Cool} -r 5000,20000,50000,100000,200000,500000,1000000 --balance -o {output.mcool} 
 
-        set +u
-        conda deactivate
-        set -u
     """
     
 rule call_compartment:
@@ -71,16 +55,10 @@ rule call_compartment:
     params:
         resolution=100000
     shell:"""
-        set +u
-        source activate
-        conda activate hic2
-        set -u
+
         mkdir -p processed/compartment
         cooltools eigs-cis {input.mcool}::/resolutions/{params.resolution} --phasing-track {input.comaprtment_ref_track} -o ./processed/compartment/{wildcards.sample}.compartment.100k --bigwig
 
-        set +u
-        conda deactivate
-        set -u
     """
 
 rule compute_expected:
@@ -93,34 +71,20 @@ rule compute_expected:
     params:
         resolution=100000
     shell:"""
-        set +u
-        source activate
-        conda activate hic2
-        set -u
-
+        
         cooltools expected-cis {input.mcool}::/resolutions/{params.resolution}  -p {threads} -o {output.expected100k}
 
-        set +u
-        conda deactivate
-        set -u
     """
 
 rule call_tad:
     input:
-        coolpath = rules.pairs2cool.output.balancedCool,
+        BlancedCool = "processed/cools/{sample}.balanced.5k.cool",
     output:
         insulationScore = "processed/insulation/{sample}.standardTAD.tsv",
     shell:"""
-        set +u
-        source activate
-        conda activate hic2
-        set -u
+       
+        cooltools insulation {input.BlancedCool} --ignore-diags 2 --window-pixels 20 40 60 80 100 200 > {output.insulationScore}
         
-        cooltools insulation {input.coolpath} --ignore-diags 2 --window-pixels 20 40 60 80 100 200 > {output.insulationScore}
-        
-        set +u
-        conda deactivate
-        set -u
     """
 
 rule compartmentVecs2bed:
@@ -130,21 +94,14 @@ rule compartmentVecs2bed:
         compartmentbed = "processed/compartment/{sample}.compartment.100k.bed",
         tmpfile = temp("processed/compartment/{sample}.temp.bed")
     shell:"""
-        set +u
-        source activate
-        conda activate R
-        set -u
 
         Rscript ./bulkHiCprocess/scripts/compartmentVecs2bed.R {input.rawCom} {output.tmpfile}
 
         bedtools merge -s -d 3 -i {output.tmpfile} -o distinct -c 5 > {output.compartmentbed}
 
-        set +u
-        conda deactivate
-        set -u
     """
 
-rule cleanTADs:
+rule cleanTADs: # memory overflow
     input:
         rawTADs = rules.call_tad.output.insulationScore,
         comp = rules.compartmentVecs2bed.output.compartmentbed,
@@ -152,16 +109,9 @@ rule cleanTADs:
         cleanedTADs = "processed/TADs/{sample}.tad.bed"
 
     shell:"""
-        set +u
-        source activate
-        conda activate R
-        set -u
 
         Rscript ./bulkHiCprocess/scripts/cleanTADs.R {input.comp} {input.rawTADs} {output.cleanedTADs}
 
-        set +u
-        conda deactivate
-        set -u
     """
 
 rule compute_saddle:
@@ -175,16 +125,11 @@ rule compute_saddle:
     params:
         resolution = 100000
     shell:"""
-        set +u
-        source activate
-        conda activate hic2
-        set -u
+
         cooltools saddle {input.mcool}::/resolutions/{params.resolution} \
         ./processed/compartment/{wildcards.sample}.compartment.100k.cis.vecs.tsv::E1 {input.expected} \
         -o ./processed/saddle/{wildcards.sample}.saddle --fig png --strength --qrange 0.025 0.975
-        set +u
-        conda deactivate
-        set -u
+
     """
 
 rule compute_strength:
